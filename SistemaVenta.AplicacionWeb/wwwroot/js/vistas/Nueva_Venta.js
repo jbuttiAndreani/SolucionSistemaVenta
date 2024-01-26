@@ -115,48 +115,75 @@ $("#cboBuscarProducto").on("select2:select", function (e) {
         return false
     }
 
-    swal({
+    const customSwal = swal.mixin({
+        confirmButtonText: 'Aceptar',
+        cancelButtonText: 'Cancelar',
+        showCancelButton: true,
+        showLoaderOnConfirm: true,
+        progressSteps: ['1', '2']
+    });
+
+    customSwal.queue([{
         title: data.marca,
         text: data.text,
         imageUrl: data.urlImagen,
-        type: "input",
-        showCancelButton: true,
-        closeOnConfirm: false,
-        inputPlaceholder: "Ingrese Canitdad"
-    },
-        function (valor) {
+        input: 'text',
+        inputPlaceholder: 'Ingrese Cantidad',
+        preConfirm: (value) => {
+            return new Promise((resolve) => {
+                if (!value || isNaN(parseInt(value))) {
+                    toastr.warning('', 'Debe ingresar un valor numérico');
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        }
+    }, {
+        title: 'Seleccione una opción',
+        input: 'select',
+        inputOptions: {
+            'option1': 'Precio Lista',
+            'option2': 'Precio Efectivo',
+            'option3': 'Precio Tarjeta'
+        },
+        inputPlaceholder: 'Seleccione una opción',
+        preConfirm: (value) => {
+            return new Promise((resolve) => {
+                if (!value) {
+                    toastr.warning('', 'Debe seleccionar una opción');
+                    resolve(false);
+                } else {
+                    resolve(true);
+                }
+            });
+        }
+    }]).then((result) => {
+        if (result.value) {
+            const cantidad = parseInt(result.value[0]);
+            const opcionSelect = result.value[1];
 
-            if (valor === false) return false;
-
-            if (valor === "") {
-                toastr.warning("", "Necesita ingresar la cantidad")
-                return false;
-            }
-            if (isNaN(parseInt(valor))) {
-                toastr.warning("", "Debe ingresar un valor númerico")
-                return false;
-            }
+            // Resto del código para procesar la cantidad y la opción select
 
             let producto = {
                 idProducto: data.id,
                 marcaProducto: data.marca,
                 descripcionProducto: data.text,
                 categoriaProducto: data.categoria,
-                cantidad: parseInt(valor),
+                cantidad: cantidad,
                 precio: data.precio.toString(),
-                total: (parseFloat(valor) * data.precio).toString()
-
+                total: (parseFloat(cantidad) * data.precio).toString()
             }
 
-            ProductosParaVenta.push(producto)
+            ProductosParaVenta.push(producto);
 
             mostrarProducto_Precios();
-            $("#cboBuscarProducto").val("").trigger("change")
-            swal.close()
+            $("#cboBuscarProducto").val("").trigger("change");
         }
-    )
+    });
+});
 
-})
+
 
 function mostrarProducto_Precios() {
 
